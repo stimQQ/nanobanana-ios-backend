@@ -4,12 +4,11 @@ import { supabaseAdmin } from '@/lib/supabase/client';
 import { GenerateImageRequest, GenerateImageResponse, GenerationType } from '@/lib/types/database';
 import { checkUserCredits, deductCredits, getCreditsForGenerationType } from '@/lib/utils/credits';
 import { translate } from '@/lib/config/languages';
-import axios from 'axios';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize API configuration
-const APICORE_API_KEY = process.env.APICORE_API_KEY || 'sk-uZ37YcpL8Cil4MBqJErYNpzgrIbM0W77r33I3mFyce1kjGZI';
-const GEMINI_MODEL = 'gemini-2.5-flash-image';
-const API_ENDPOINT = 'https://api.apicore.ai/v1/chat/completions';
+// Initialize Gemini API configuration
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyDvjN4w54QMfvUF3TzMmpP6_H3pR-ngxhE';
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds
 
@@ -32,100 +31,91 @@ async function imageUrlToBase64(url: string): Promise<string> {
   }
 }
 
-// Helper function to generate images using Gemini API through APICore
+// Helper function to generate images using Gemini API
 async function generateImage(prompt: string, inputImages?: string[]): Promise<string> {
   try {
-    console.log('Using Gemini model:', GEMINI_MODEL);
+    console.log('Using Gemini model: gemini-2.5-flash-image-preview');
     console.log('Prompt:', prompt);
 
-    // For now, we'll focus on text-to-image generation
-    // Image-to-image can be added later if needed
-    const fullPrompt = inputImages && inputImages.length > 0
-      ? `${prompt} (Based on the provided image)`
-      : prompt;
+    // Use the Gemini Flash model for image generation
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image-preview' });
 
-    const response = await axios.post(
-      API_ENDPOINT,
-      {
-        model: GEMINI_MODEL,
-        messages: [
-          {
-            role: 'user',
-            content: `Generate an image of: ${fullPrompt}`
+    // Create a detailed prompt for image generation
+    const detailedPrompt = `Generate an image of: ${prompt}`;
+
+    const result = await model.generateContent(detailedPrompt);
+    const response = await result.response;
+
+    // Check if the response contains image data
+    const candidates = response.candidates;
+    if (candidates && candidates[0]?.content?.parts) {
+      const parts = candidates[0].content.parts;
+
+      // Look for inline image data in the response
+      for (const part of parts) {
+        if (part.inlineData?.data && part.inlineData?.mimeType) {
+          const base64Data = part.inlineData.data;
+          const mimeType = part.inlineData.mimeType;
+
+          console.log(`Image generated with mimeType: ${mimeType}`);
+
+          // Store the image in Supabase storage
+          try {
+            const timestamp = Date.now();
+            const extension = mimeType.split('/')[1] || 'png';
+            const fileName = `generated/${timestamp}-${Math.random().toString(36).substring(7)}.${extension}`;
+
+            // Convert base64 to Buffer
+            const imageBuffer = Buffer.from(base64Data, 'base64');
+
+            const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+              .from('images')
+              .upload(fileName, imageBuffer, {
+                contentType: mimeType,
+                cacheControl: '3600',
+                upsert: false
+              });
+
+            if (!uploadError && uploadData) {
+              const { data: { publicUrl } } = supabaseAdmin.storage
+                .from('images')
+                .getPublicUrl(fileName);
+
+              console.log('Image saved to storage:', publicUrl);
+              return publicUrl;
+            } else if (uploadError) {
+              console.error('Upload error:', uploadError);
+            }
+          } catch (storageError) {
+            console.error('Storage error:', storageError);
           }
-        ],
-        max_tokens: 1024,
-        temperature: 0.7
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${APICORE_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 120000 // 2 minutes
-      }
-    );
 
-    // Handle the response
-    if (response.data?.choices?.[0]?.message?.content) {
-      const content = response.data.choices[0].message.content;
-
-      // Extract URL from markdown format ![...](url)
-      const urlMatch = content.match(/!\[.*?\]\((https?:\/\/[^)]+)\)/);
-      const base64Match = content.match(/!\[.*?\]\((data:image\/[^)]+)\)/);
-
-      if (urlMatch && urlMatch[1]) {
-        console.log('Image URL generated:', urlMatch[1]);
-        return urlMatch[1];
-      } else if (base64Match && base64Match[1]) {
-        console.log('Base64 image generated');
-        return base64Match[1];
-      } else {
-        // Try to find any URL in the response
-        const anyUrlMatch = content.match(/(https?:\/\/[^\s]+)/);
-        if (anyUrlMatch && anyUrlMatch[1]) {
-          console.log('URL found in response:', anyUrlMatch[1]);
-          return anyUrlMatch[1];
+          // If storage fails, return the base64 data URL
+          return `data:${mimeType};base64,${base64Data}`;
         }
       }
     }
 
-    // If no image was generated, create a placeholder
-    console.log('No image generated, creating placeholder');
-
-    const placeholderSvg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-        <rect fill="#1a1a1a" width="1024" height="1024"/>
-        <text fill="#FFD700" font-size="48" font-family="Arial" x="50%" y="45%" text-anchor="middle">
-          Image Generation in Progress
-        </text>
-        <text fill="#888" font-size="32" font-family="Arial" x="50%" y="55%" text-anchor="middle">
-          ${prompt.substring(0, 50)}...
-        </text>
-      </svg>
-    `;
-
-    const svgBase64 = Buffer.from(placeholderSvg).toString('base64');
-    return `data:image/svg+xml;base64,${svgBase64}`;
+    // If no image was generated, throw an error
+    throw new Error('No image was generated. Please try a different prompt.');
 
   } catch (error: any) {
     console.error('Gemini API error:', {
       message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
+      stack: error.stack
     });
 
     // Handle specific error cases
-    if (error.code === 'ECONNABORTED') {
-      throw new Error('Image generation timed out. Please try again.');
+    if (error.message?.includes('API key')) {
+      throw new Error('Invalid API key. Please check your configuration.');
     }
 
-    if (error.response?.status === 503) {
-      throw new Error('Model is currently unavailable. Please try again later.');
+    if (error.message?.includes('quota')) {
+      throw new Error('API quota exceeded. Please try again later.');
     }
 
-    if (error.response?.data?.error?.message) {
-      throw new Error(error.response.data.error.message);
+    if (error.message?.includes('No image')) {
+      throw error; // Re-throw the "No image" error
     }
 
     throw new Error('Failed to generate image. Please try again.');
