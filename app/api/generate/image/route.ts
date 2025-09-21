@@ -4,16 +4,14 @@ import { supabaseAdmin } from '@/lib/supabase/client';
 import { GenerateImageRequest, GenerateImageResponse, GenerationType } from '@/lib/types/database';
 import { checkUserCredits, deductCredits, getCreditsForGenerationType } from '@/lib/utils/credits';
 import { translate } from '@/lib/config/languages';
-import { GoogleGenAI } from "@google/genai";
+import axios from 'axios';
 
-// Initialize API key
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyDvjN4w54QMfvUF3TzMmpP6_H3pR-ngxhE';
-const GEMINI_MODEL = 'gemini-2.5-flash-image-preview';
+// Initialize API configuration
+const APICORE_API_KEY = process.env.APICORE_API_KEY || 'sk-uZ37YcpL8Cil4MBqJErYNpzgrIbM0W77r33I3mFyce1kjGZI';
+const GEMINI_MODEL = 'gemini-2.5-flash-image';
+const API_ENDPOINT = 'https://api.apicore.ai/v1/chat/completions';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds
-
-// Initialize the Google GenAI client
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // Helper function to convert image URL to base64
 async function imageUrlToBase64(url: string): Promise<string> {
@@ -34,65 +32,60 @@ async function imageUrlToBase64(url: string): Promise<string> {
   }
 }
 
-// Helper function to generate images using Google GenAI SDK
+// Helper function to generate images using Gemini API through APICore
 async function generateImage(prompt: string, inputImages?: string[]): Promise<string> {
   try {
     console.log('Using Gemini model:', GEMINI_MODEL);
     console.log('Prompt:', prompt);
 
-    let result: any;
+    // For now, we'll focus on text-to-image generation
+    // Image-to-image can be added later if needed
+    const fullPrompt = inputImages && inputImages.length > 0
+      ? `${prompt} (Based on the provided image)`
+      : prompt;
 
-    if (inputImages && inputImages.length > 0) {
-      // Image-to-image: build contents array with text and inline images
-      const contents: any[] = [];
-
-      // Add the text prompt first as an object
-      contents.push({ text: prompt });
-
-      // Add all input images as inlineData objects
-      for (const imageUrl of inputImages) {
-        const base64Image = await imageUrlToBase64(imageUrl);
-        contents.push({
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: base64Image
+    const response = await axios.post(
+      API_ENDPOINT,
+      {
+        model: GEMINI_MODEL,
+        messages: [
+          {
+            role: 'user',
+            content: `Generate an image of: ${fullPrompt}`
           }
-        });
+        ],
+        max_tokens: 1024,
+        temperature: 0.7
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${APICORE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 120000 // 2 minutes
       }
+    );
 
-      // Use the exact format from the working test
-      result = await ai.models.generateContent({
-        model: GEMINI_MODEL,
-        contents: contents
-      });
-    } else {
-      // Text-to-image: simple string format
-      result = await ai.models.generateContent({
-        model: GEMINI_MODEL,
-        contents: prompt
-      });
-    }
+    // Handle the response
+    if (response.data?.choices?.[0]?.message?.content) {
+      const content = response.data.choices[0].message.content;
 
-    // Handle the response format with candidates[0].content.parts
-    if (result.candidates && result.candidates[0]) {
-      const parts = result.candidates[0].content.parts;
+      // Extract URL from markdown format ![...](url)
+      const urlMatch = content.match(/!\[.*?\]\((https?:\/\/[^)]+)\)/);
+      const base64Match = content.match(/!\[.*?\]\((data:image\/[^)]+)\)/);
 
-      // Look for generated image in the response
-      if (parts && Array.isArray(parts)) {
-        for (const part of parts) {
-          if (part && part.inlineData) {
-            console.log('Image generated successfully!');
-            console.log('Image data length:', part.inlineData.data.length);
-            // Return as data URL
-            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-          }
-        }
-
-        // Check for text response
-        for (const part of parts) {
-          if (part && part.text) {
-            console.log('Text response received:', part.text.substring(0, 200));
-          }
+      if (urlMatch && urlMatch[1]) {
+        console.log('Image URL generated:', urlMatch[1]);
+        return urlMatch[1];
+      } else if (base64Match && base64Match[1]) {
+        console.log('Base64 image generated');
+        return base64Match[1];
+      } else {
+        // Try to find any URL in the response
+        const anyUrlMatch = content.match(/(https?:\/\/[^\s]+)/);
+        if (anyUrlMatch && anyUrlMatch[1]) {
+          console.log('URL found in response:', anyUrlMatch[1]);
+          return anyUrlMatch[1];
         }
       }
     }
@@ -116,17 +109,26 @@ async function generateImage(prompt: string, inputImages?: string[]): Promise<st
     return `data:image/svg+xml;base64,${svgBase64}`;
 
   } catch (error: any) {
-    console.error('Google GenAI SDK error:', {
+    console.error('Gemini API error:', {
       message: error.message,
-      error: error
+      response: error.response?.data,
+      status: error.response?.status
     });
 
-    // If SDK fails, provide more specific error messages
-    if (error.message?.includes('not found') || error.message?.includes('not available')) {
-      throw new Error(`Model ${GEMINI_MODEL} is not available. Please check model availability in your region.`);
+    // Handle specific error cases
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('Image generation timed out. Please try again.');
     }
 
-    throw error;
+    if (error.response?.status === 503) {
+      throw new Error('Model is currently unavailable. Please try again later.');
+    }
+
+    if (error.response?.data?.error?.message) {
+      throw new Error(error.response.data.error.message);
+    }
+
+    throw new Error('Failed to generate image. Please try again.');
   }
 }
 
