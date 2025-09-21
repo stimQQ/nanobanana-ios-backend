@@ -154,12 +154,12 @@ export async function POST(req: NextRequest) {
     try {
       const { user } = authenticatedReq;
       const body = await req.json() as GenerateImageRequest;
-      const { prompt, language = 'en', generationType = 'text-to-image', inputImages } = body;
+      const { prompt, language = 'en', generation_type = 'text-to-image', input_images } = body;
 
-      console.log(`Image generation request: type=${generationType}, user=${user.userId}`);
+      console.log(`Image generation request: type=${generation_type}, user=${user.userId}`);
 
       // Check user credits
-      const creditsNeeded = getCreditsForGenerationType(generationType);
+      const creditsNeeded = getCreditsForGenerationType(generation_type);
       const hasCredits = await checkUserCredits(user.userId, creditsNeeded);
 
       if (!hasCredits) {
@@ -174,9 +174,9 @@ export async function POST(req: NextRequest) {
 
       // Generate the image with retry logic
       const imageUrl = await retryApiCall(async () => {
-        if (generationType === 'image-to-image' && inputImages && inputImages.length > 0) {
+        if (generation_type === 'image-to-image' && input_images && input_images.length > 0) {
           // For image-to-image, include the input images
-          return await generateImage(prompt, inputImages);
+          return await generateImage(prompt, input_images);
         } else {
           // For text-to-image
           return await generateImage(prompt);
@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
         .insert({
           user_id: user.userId,
           prompt,
-          generation_type: generationType,
+          generation_type: generation_type,
           image_url: imageUrl,
           language,
           credits_used: creditsNeeded
@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
       if (authenticatedReq.user && !error.message?.includes('credits')) {
         try {
           const creditsNeeded = getCreditsForGenerationType(
-            (await req.json()).generationType || 'text-to-image'
+            (await req.json()).generation_type || 'text-to-image'
           );
           await supabaseAdmin.rpc('add_credits', {
             p_user_id: authenticatedReq.user.userId,
