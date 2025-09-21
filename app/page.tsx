@@ -538,7 +538,7 @@ export default function Home() {
                 Start Your AI Editing Journey Today
               </h2>
               <p className="text-xl mb-10 text-black/80">
-                Join thousands of creators who've discovered the power of conversational image editing
+                Join thousands of creators who&apos;ve discovered the power of conversational image editing
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
