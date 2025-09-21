@@ -124,7 +124,7 @@ async function checkAppleAuth(): Promise<ServiceStatus> {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Run all checks in parallel
     const [supabaseStatus, apiCoreStatus, appleAuthStatus] = await Promise.all([

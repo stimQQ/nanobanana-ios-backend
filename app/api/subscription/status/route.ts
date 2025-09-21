@@ -3,12 +3,12 @@ import { withAuth, AuthenticatedRequest, corsHeaders } from '@/lib/middleware/au
 import { supabaseAdmin } from '@/lib/supabase/client';
 import { SUBSCRIPTION_PLANS } from '@/lib/config/subscriptions';
 
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return new NextResponse(null, { status: 200, headers: corsHeaders() });
 }
 
-export async function GET(request: NextRequest) {
-  return withAuth(request, async (req: AuthenticatedRequest) => {
+export async function GET(_request: NextRequest) {
+  return withAuth(_request, async (req: AuthenticatedRequest) => {
     const user = req.user!;
 
     // Get user's current subscription

@@ -5,7 +5,7 @@ import { SubscriptionRequest, SubscriptionResponse } from '@/lib/types/database'
 import { getSubscriptionByProductId } from '@/lib/config/subscriptions';
 import { addCredits } from '@/lib/utils/credits';
 
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return new NextResponse(null, { status: 200, headers: corsHeaders() });
 }
 

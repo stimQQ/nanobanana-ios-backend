@@ -1,10 +1,45 @@
 import Stripe from 'stripe';
 import { SubscriptionTier } from '@/lib/types/database';
 
-// Initialize Stripe with the secret key
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-  typescript: true,
+// Lazy initialization of Stripe client
+let stripeInstance: Stripe | null = null;
+
+/**
+ * Get the Stripe client instance.
+ * Uses lazy initialization to avoid errors during build time.
+ * @throws Error if STRIPE_SECRET_KEY is not set when Stripe is actually needed
+ */
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+
+    if (!secretKey) {
+      // In development or build time, we might not have the key yet
+      // This allows the build to succeed
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        console.warn('Warning: STRIPE_SECRET_KEY is not set. Stripe functionality will not work.');
+        // Return a dummy instance for build time (will fail at runtime if actually used)
+        throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
+      }
+      throw new Error('STRIPE_SECRET_KEY is required in production');
+    }
+
+    stripeInstance = new Stripe(secretKey, {
+      apiVersion: '2025-08-27.basil',
+      typescript: true,
+    });
+  }
+
+  return stripeInstance;
+}
+
+// For backward compatibility, export stripe as a getter
+// This will throw an error if accessed without proper configuration
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    const instance = getStripe();
+    return instance[prop as keyof Stripe];
+  }
 });
 
 // Stripe Price IDs for each subscription plan
