@@ -71,6 +71,7 @@ export default function GeneratePage() {
     setUserLanguage(lang);
     // Detect if mobile device
     setIsMobile(isMobileDevice());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, authLoading, hasLoadedHistory]);
 
   const loadChatHistory = async () => {
@@ -132,7 +133,7 @@ export default function GeneratePage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, _index?: number) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 

@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
       userId = decoded.userId;
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { success: false, error: 'Invalid authorization token' },
         { status: 401 }
@@ -72,20 +72,20 @@ export async function GET(request: NextRequest) {
         stripe_details: stripeSubscription ? {
           status: stripeSubscription.status,
           cancel_at_period_end: stripeSubscription.cancel_at_period_end,
-          current_period_end: new Date(stripeSubscription.current_period_end * 1000),
-          cancel_at: stripeSubscription.cancel_at
-            ? new Date(stripeSubscription.cancel_at * 1000)
+          current_period_end: new Date((stripeSubscription as any).current_period_end * 1000),
+          cancel_at: (stripeSubscription as any).cancel_at
+            ? new Date((stripeSubscription as any).cancel_at * 1000)
             : null,
         } : null,
       },
     });
 
-  } catch (error) {
-    console.error('Error getting subscription:', error);
+  } catch (_error) {
+    console.error('Error getting subscription:', _error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get subscription'
+        error: _error instanceof Error ? _error.message : 'Failed to get subscription'
       },
       { status: 500 }
     );
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
       userId = decoded.userId;
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { success: false, error: 'Invalid authorization token' },
         { status: 401 }
@@ -185,18 +185,18 @@ export async function POST(request: NextRequest) {
           status: updatedSubscription?.status,
           cancel_at_period_end: updatedSubscription?.cancel_at_period_end,
           current_period_end: updatedSubscription
-            ? new Date(updatedSubscription.current_period_end * 1000)
+            ? new Date((updatedSubscription as any).current_period_end * 1000)
             : null,
         },
       },
     });
 
-  } catch (error) {
-    console.error('Error managing subscription:', error);
+  } catch (_error) {
+    console.error('Error managing subscription:', _error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to manage subscription'
+        error: _error instanceof Error ? _error.message : 'Failed to manage subscription'
       },
       { status: 500 }
     );
@@ -221,7 +221,7 @@ export async function DELETE(request: NextRequest) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
       userId = decoded.userId;
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { success: false, error: 'Invalid authorization token' },
         { status: 401 }
@@ -272,12 +272,12 @@ export async function DELETE(request: NextRequest) {
       message: 'Subscription cancelled immediately',
     });
 
-  } catch (error) {
-    console.error('Error cancelling subscription:', error);
+  } catch (_error) {
+    console.error('Error cancelling subscription:', _error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to cancel subscription'
+        error: _error instanceof Error ? _error.message : 'Failed to cancel subscription'
       },
       { status: 500 }
     );
@@ -302,7 +302,7 @@ export async function PUT(request: NextRequest) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
       userId = decoded.userId;
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { success: false, error: 'Invalid authorization token' },
         { status: 401 }
@@ -334,12 +334,12 @@ export async function PUT(request: NextRequest) {
       portal_url: session.url,
     });
 
-  } catch (error) {
-    console.error('Error creating portal session:', error);
+  } catch (_error) {
+    console.error('Error creating portal session:', _error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create portal session'
+        error: _error instanceof Error ? _error.message : 'Failed to create portal session'
       },
       { status: 500 }
     );

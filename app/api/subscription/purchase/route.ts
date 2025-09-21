@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Add credits to user account
-      const { success: creditsAdded, newBalance } = await addCredits(
+      const { success: creditsAdded, newBalance: _newBalance } = await addCredits(
         user.id,
         plan.credits,
         'subscription',

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest, corsHeaders } from '@/lib/middleware/auth';
 import { supabaseAdmin } from '@/lib/supabase/client';
-import { GenerateImageRequest, GenerateImageResponse, GenerationType } from '@/lib/types/database';
+import { GenerateImageRequest, GenerateImageResponse } from '@/lib/types/database';
 import { checkUserCredits, deductCredits, getCreditsForGenerationType } from '@/lib/utils/credits';
 import { translate } from '@/lib/config/languages';
 import axios from 'axios';
@@ -195,7 +195,7 @@ async function retryApiCall<T>(
 
 export async function POST(req: NextRequest) {
   return withAuth(req, async (authenticatedReq: AuthenticatedRequest) => {
-    const corsResponse = new NextResponse(null, { status: 200, headers: corsHeaders() });
+    const _corsResponse = new NextResponse(null, { status: 200, headers: corsHeaders() });
 
     // Declare body variable outside try block for access in catch block
     let body: GenerateImageRequest | undefined;
@@ -319,6 +319,6 @@ export async function POST(req: NextRequest) {
   });
 }
 
-export async function OPTIONS(req: NextRequest) {
+export async function OPTIONS(_req: NextRequest) {
   return new NextResponse(null, { status: 200, headers: corsHeaders() });
 }

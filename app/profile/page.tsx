@@ -11,7 +11,7 @@ import Link from 'next/link';
 import DefaultLayout from '@/components/layout/DefaultLayout';
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, updateUser, refreshProfile } = useAuth();
+  const { user, isAuthenticated, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
       userId = decoded.userId;
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { success: false, error: 'Invalid authorization token' },
         { status: 401 }
@@ -150,12 +150,12 @@ export async function POST(request: NextRequest) {
       sessionUrl: session.url,
     });
 
-  } catch (error) {
-    console.error('Error creating checkout session:', error);
+  } catch (_error) {
+    console.error('Error creating checkout session:', _error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create checkout session'
+        error: _error instanceof Error ? _error.message : 'Failed to create checkout session'
       },
       { status: 500 }
     );
@@ -192,12 +192,12 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
-    console.error('Error retrieving session:', error);
+  } catch (_error) {
+    console.error('Error retrieving session:', _error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve session'
+        error: _error instanceof Error ? _error.message : 'Failed to retrieve session'
       },
       { status: 500 }
     );

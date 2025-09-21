@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -13,11 +13,10 @@ import { createCheckoutSession, redirectToCheckout } from '@/lib/utils/stripe-cl
 import { SUBSCRIPTION_PLANS } from '@/lib/config/subscriptions';
 
 export default function SubscriptionPage() {
-  const { user, isAuthenticated, refreshProfile } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
@@ -33,13 +32,7 @@ export default function SubscriptionPage() {
   // Use subscription plans from config
   const defaultPlans: SubscriptionPlan[] = Object.values(SUBSCRIPTION_PLANS);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchSubscriptionStatus();
-    }
-  }, [isAuthenticated]);
-
-  const fetchSubscriptionStatus = async () => {
+  const fetchSubscriptionStatus = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await apiClient.getSubscriptionStatus();
@@ -51,7 +44,13 @@ export default function SubscriptionPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [defaultPlans]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchSubscriptionStatus();
+    }
+  }, [isAuthenticated, fetchSubscriptionStatus]);
 
   const handlePurchase = async (plan: SubscriptionPlan) => {
     if (!isAuthenticated) {

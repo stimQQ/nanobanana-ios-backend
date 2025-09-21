@@ -51,7 +51,7 @@ export async function downloadImage(imageUrl: string, filename?: string) {
       setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
 
       return { success: true };
-    } catch (fetchError) {
+    } catch (_fetchError) {
       // If fetch fails (likely CORS), fall back to opening in new tab
       const link = document.createElement('a');
       link.href = imageUrl;
@@ -116,7 +116,7 @@ export async function shareImage(imageUrl: string, title?: string) {
           });
           return { success: true, method: 'web-share-url' };
         }
-      } catch (shareError) {
+      } catch (_shareError) {
         // If file sharing fails, try URL only
         await navigator.share({
           title: shareTitle,
@@ -140,7 +140,7 @@ export async function shareImage(imageUrl: string, title?: string) {
     try {
       await copyToClipboard(imageUrl);
       return { success: true, method: 'clipboard-fallback' };
-    } catch (clipboardError) {
+    } catch (_clipboardError) {
       console.error('Error sharing image:', error);
       return {
         success: false,
@@ -170,7 +170,7 @@ async function copyToClipboard(text: string): Promise<void> {
     try {
       document.execCommand('copy');
       textArea.remove();
-    } catch (error) {
+    } catch (_error) {
       textArea.remove();
       throw new Error('Failed to copy to clipboard');
     }

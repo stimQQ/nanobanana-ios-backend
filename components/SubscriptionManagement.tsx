@@ -19,8 +19,8 @@ interface SubscriptionManagementProps {
 
 const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
   userToken,
-  userId,
-  currentTier = 'free',
+  userId: _userId,
+  currentTier: _currentTier = 'free',
 }) => {
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -29,6 +29,7 @@ const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
 
   useEffect(() => {
     fetchSubscriptionStatus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userToken]);
 
   const fetchSubscriptionStatus = async () => {
@@ -38,8 +39,8 @@ const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
       if (data.success) {
         setSubscription(data.subscription);
       }
-    } catch (error) {
-      console.error('Error fetching subscription:', error);
+    } catch (_error) {
+      console.error('Error fetching subscription:', _error);
       setMessage({ type: 'error', text: 'Failed to load subscription details' });
     } finally {
       setLoading(false);
@@ -62,7 +63,7 @@ const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to cancel subscription' });
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage({ type: 'error', text: 'Failed to cancel subscription' });
     } finally {
       setActionLoading(false);
@@ -81,7 +82,7 @@ const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to resume subscription' });
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage({ type: 'error', text: 'Failed to resume subscription' });
     } finally {
       setActionLoading(false);
@@ -97,7 +98,7 @@ const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
       if (!result.success) {
         setMessage({ type: 'error', text: result.error || 'Failed to open billing portal' });
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage({ type: 'error', text: 'Failed to open billing portal' });
     } finally {
       setActionLoading(false);
@@ -127,7 +128,7 @@ const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
           <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No Active Subscription</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You don't have an active Stripe subscription.
+            You don&apos;t have an active Stripe subscription.
           </p>
         </div>
       </div>
@@ -267,7 +268,7 @@ const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
               This subscription was purchased through Apple Pay. To manage or cancel this subscription,
-              please use your iPhone's Settings > Apple ID > Subscriptions.
+              please use your iPhone&apos;s Settings &gt; Apple ID &gt; Subscriptions.
             </p>
           </div>
         )}

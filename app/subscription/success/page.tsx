@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { CheckCircle, ArrowRight, Package, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SubscriptionSuccessPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [sessionDetails, setSessionDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +150,7 @@ export default function SubscriptionSuccessPage() {
         {/* Next Steps */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">What's Next?</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">What&apos;s Next?</h3>
             <div className="space-y-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
@@ -176,7 +175,7 @@ export default function SubscriptionSuccessPage() {
                 <div className="ml-4">
                   <p className="text-gray-900 font-medium">Check your email</p>
                   <p className="text-gray-600 text-sm mt-1">
-                    We've sent you a receipt and subscription details
+                    We&apos;ve sent you a receipt and subscription details
                   </p>
                 </div>
               </div>

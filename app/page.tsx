@@ -34,6 +34,7 @@ export default function Home() {
       setActiveDemo((prev) => (prev + 1) % demoExamples.length);
     }, 4000);
     return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const demoExamples = [

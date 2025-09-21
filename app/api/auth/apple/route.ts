@@ -3,9 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase/client';
 import { validateAppleIdToken, signJWT } from '@/lib/utils/auth';
 import { AuthRequest, AuthResponse } from '@/lib/types/database';
 import { corsHeaders } from '@/lib/middleware/auth';
-import { translate } from '@/lib/config/languages';
 
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return new NextResponse(null, { status: 200, headers: corsHeaders() });
 }
 
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
     let appleUser;
     try {
       appleUser = await validateAppleIdToken(apple_id_token);
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { success: false, error: 'Invalid Apple ID token' },
         { status: 401, headers: corsHeaders() }
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
     const appleId = appleUser.sub;
 
     // Check if user exists
-    const { data: existingUser, error: findError } = await supabaseAdmin
+    const { data: existingUser, error: _findError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('apple_id', appleId)
@@ -108,7 +107,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
     });
 
-    const language = request.headers.get('accept-language')?.split(',')[0].split('-')[0] || 'en';
+    const _language = request.headers.get('accept-language')?.split(',')[0].split('-')[0] || 'en';
 
     const response: AuthResponse = {
       success: true,

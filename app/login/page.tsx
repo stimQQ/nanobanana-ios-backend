@@ -14,7 +14,7 @@ interface GoogleUserInfo {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, login, loginWithGoogle, loginDev } = useAuth();
+  const { isAuthenticated, loginWithGoogle, loginDev } = useAuth();
   const [isDevMode, setIsDevMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 

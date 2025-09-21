@@ -138,7 +138,7 @@ export async function uploadToStorage(
     }
 
     // Upload file
-    const { data, error: uploadError } = await supabaseAdmin.storage
+    const { data: _data, error: uploadError } = await supabaseAdmin.storage
       .from(bucketName)
       .upload(filePath, buffer, {
         contentType,
@@ -158,7 +158,7 @@ export async function uploadToStorage(
 
           console.log(`[Storage] File exists, retrying with ${retryPath}`);
 
-          const { data: retryData, error: retryError } = await supabaseAdmin.storage
+          const { data: _retryData, error: retryError } = await supabaseAdmin.storage
             .from(bucketName)
             .upload(retryPath, buffer, {
               contentType,

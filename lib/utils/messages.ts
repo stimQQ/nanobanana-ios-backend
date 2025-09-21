@@ -2,8 +2,6 @@
  * Message utilities for localized success/error messages
  */
 
-import { translate } from '@/lib/config/languages';
-
 export interface LocalizedMessage {
   en: string;
   cn: string;

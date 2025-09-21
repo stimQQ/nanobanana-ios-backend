@@ -111,7 +111,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
 
   // Calculate expiration date
-  const expiresAt = new Date(subscription.current_period_end * 1000);
+  const expiresAt = new Date((subscription as any).current_period_end * 1000);
 
   // Create subscription record in database
   const subscriptionData = {
@@ -218,7 +218,7 @@ async function handleSubscriptionChange(
   }
 
   const plan = SUBSCRIPTION_PLANS[tier];
-  const expiresAt = new Date(subscription.current_period_end * 1000);
+  const expiresAt = new Date((subscription as any).current_period_end * 1000);
 
   // Update existing subscription or create new one
   const { data: existingSub } = await supabase
@@ -297,7 +297,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
   // Check if subscription has expired
   const now = new Date();
-  const expiresAt = new Date(subscription.current_period_end * 1000);
+  const expiresAt = new Date((subscription as any).current_period_end * 1000);
 
   if (now >= expiresAt) {
     // Reset user to free tier
@@ -318,13 +318,13 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 async function handleInvoicePaid(invoice: Stripe.Invoice) {
   console.log('Processing invoice.paid:', invoice.id);
 
-  if (!invoice.subscription) {
+  if (!(invoice as any).subscription) {
     console.log('Invoice not related to a subscription, skipping');
     return;
   }
 
   // Get subscription
-  const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+  const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
   const userId = subscription.metadata?.supabase_user_id;
 
   if (!userId) {
@@ -357,7 +357,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   const newCredits = (user?.credits || 0) + plan.credits;
 
   // Update user credits and extend subscription
-  const expiresAt = new Date(subscription.current_period_end * 1000);
+  const expiresAt = new Date((subscription as any).current_period_end * 1000);
 
   await supabase
     .from('users')
@@ -396,10 +396,10 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
       id: uuidv4(),
       user_id: userId,
       subscription_id: existingSub.id,
-      stripe_payment_intent_id: invoice.payment_intent as string,
+      stripe_payment_intent_id: (invoice as any).payment_intent as string,
       payment_provider: 'stripe',
-      amount: (invoice.amount_paid / 100), // Convert from cents
-      currency: invoice.currency,
+      amount: ((invoice as any).amount_paid / 100), // Convert from cents
+      currency: (invoice as any).currency,
       status: 'completed',
       created_at: new Date().toISOString(),
     });
@@ -410,13 +410,13 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
 async function handleInvoiceFailed(invoice: Stripe.Invoice) {
   console.log('Processing invoice.payment_failed:', invoice.id);
 
-  if (!invoice.subscription) {
+  if (!(invoice as any).subscription) {
     console.log('Invoice not related to a subscription, skipping');
     return;
   }
 
   // Get subscription
-  const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+  const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
   const userId = subscription.metadata?.supabase_user_id;
 
   if (!userId) {
@@ -430,10 +430,10 @@ async function handleInvoiceFailed(invoice: Stripe.Invoice) {
     .insert({
       id: uuidv4(),
       user_id: userId,
-      stripe_payment_intent_id: invoice.payment_intent as string,
+      stripe_payment_intent_id: (invoice as any).payment_intent as string,
       payment_provider: 'stripe',
       amount: (invoice.amount_due / 100), // Convert from cents
-      currency: invoice.currency,
+      currency: (invoice as any).currency,
       status: 'failed',
       created_at: new Date().toISOString(),
     });

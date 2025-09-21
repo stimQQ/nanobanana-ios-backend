@@ -3,7 +3,6 @@ import { corsHeaders } from '@/lib/middleware/auth';
 import { getUserFromToken, extractBearerToken } from '@/lib/utils/auth';
 import { supabaseAdmin } from '@/lib/supabase/client';
 import { UploadImageResponse } from '@/lib/types/database';
-import { translate } from '@/lib/config/languages';
 import { v4 as uuidv4 } from 'uuid';
 import {
   uploadToStorage,
@@ -12,7 +11,7 @@ import {
   STORAGE_CONFIG
 } from '@/lib/utils/storage';
 
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return new NextResponse(null, { status: 200, headers: corsHeaders() });
 }
 
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
     logContext.userId = user.id;
     console.log('[Upload] Authenticated user:', user.id);
 
-    const language = request.headers.get('accept-language')?.split(',')[0].split('-')[0] || 'en';
+    const _language = request.headers.get('accept-language')?.split(',')[0].split('-')[0] || 'en';
 
     // Parse form data
     let formData;

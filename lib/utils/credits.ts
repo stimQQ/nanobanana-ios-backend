@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase/client';
-import { User, CreditTransaction, TransactionType } from '@/lib/types/database';
+import { TransactionType } from '@/lib/types/database';
 import { CREDITS_PER_GENERATION } from '@/lib/config/subscriptions';
 
 export async function checkUserCredits(userId: string, requiredCredits: number): Promise<{
