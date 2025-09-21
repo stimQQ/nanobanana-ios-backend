@@ -1,0 +1,424 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #d1d5db;
+  --color-primary: #FFD700;
+  --color-primary-dark: #DAA520;
+  --color-primary-darker: #B8860B;
+  --color-yellow: #FFD700;
+  --color-yellow-dark: #DAA520;
+  --color-yellow-darker: #B8860B;
+  --color-dark: #000000;
+  --color-dark-secondary: #1a1a1a;
+  --color-dark-tertiary: #262626;
+  --color-border: #333333;
+  --color-text-primary: #FFD700;
+  --color-text-secondary: #9ca3af;
+  --color-text-light: #d1d5db;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --foreground: #d1d5db;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* Dark mode background - pure black */
+.dark body {
+  background: #000000;
+  min-height: 100vh;
+}
+
+/* Consistent page backgrounds - solid colors */
+.page-background {
+  background: var(--color-dark-secondary);
+}
+
+.dark .page-background {
+  background: var(--color-dark);
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-blink {
+  animation: blink 1s infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Delay utilities for animations */
+.delay-1000 {
+  animation-delay: 1s;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-dark-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-dark-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-darker);
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 215, 0, 0.1),
+    transparent
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444444;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #333333;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #444444;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Chat interface animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Message bubble animations */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Typing indicator */
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-typing span {
+  display: inline-block;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.animate-typing span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.animate-typing span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+/* Input area focus styles - Removed to keep focus only on textarea */
+
+/* Smooth transitions for buttons */
+.icon-button {
+  transition: all 0.2s ease;
+}
+
+.icon-button:hover {
+  transform: scale(1.05);
+}
+
+.icon-button:active {
+  transform: scale(0.95);
+}
+
+/* Backdrop blur for fixed bottom */
+.backdrop-blur-sm {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Minimal scrollbar for chat area */
+.chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 3px;
+}
+
+.dark .chat-scrollbar::-webkit-scrollbar-thumb {
+  background: #333333;
+}
+
+/* Smooth message animations */
+@keyframes messageSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-animate {
+  animation: messageSlide 0.3s ease-out;
+}
+
+/* New Yellow/Black Theme Utilities */
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-dark {
+  background-color: var(--color-dark);
+}
+
+.bg-dark-secondary {
+  background-color: var(--color-dark-secondary);
+}
+
+.bg-dark-tertiary {
+  background-color: var(--color-dark-tertiary);
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.border-primary {
+  border-color: var(--color-primary);
+}
+
+.border-dark {
+  border-color: var(--color-border);
+}
+
+/* Button styles */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-dark);
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-primary);
+  color: var(--color-dark);
+}
+
+.btn-dark {
+  background-color: var(--color-dark-tertiary);
+  color: var(--color-text-light);
+  border: 1px solid var(--color-border);
+  transition: all 0.2s;
+}
+
+.btn-dark:hover {
+  background-color: var(--color-dark-secondary);
+}
+
+/* Card styles */
+.card-dark {
+  background-color: var(--color-dark-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* Remove all gradient classes */
+.no-gradient {
+  background: none !important;
+  background-image: none !important;
+}
+
+/* Google OAuth Button Styling */
+[data-testid="google-oauth-button"] {
+  width: 100% !important;
+  min-height: 48px !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-testid="google-oauth-button"]:hover {
+  transform: scale(1.02) !important;
+}
+
+/* Ensure Google button iframe takes full width */
+.google-signin-button iframe {
+  width: 100% !important;
+  min-height: 48px !important;
+}

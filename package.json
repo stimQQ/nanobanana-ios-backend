@@ -1,0 +1,53 @@
+{
+  "name": "nextjs-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "deploy:vercel": "bash scripts/deploy-vercel.sh",
+    "setup:vercel-env": "bash scripts/setup-vercel-env.sh",
+    "vercel": "vercel",
+    "vercel:build": "vercel build",
+    "vercel:deploy": "vercel deploy --prod",
+    "test:auth": "node scripts/test-auth.js",
+    "test:chat": "node scripts/test-chat-api.js",
+    "db:fix": "psql $DATABASE_URL < fix-database-function.sql"
+  },
+  "dependencies": {
+    "@google/genai": "^1.20.0",
+    "@google/generative-ai": "^0.24.1",
+    "@react-oauth/google": "^0.12.2",
+    "@supabase/supabase-js": "^2.57.4",
+    "@types/cors": "^2.8.19",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "axios": "^1.12.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "jose": "^6.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.544.0",
+    "multer": "^2.0.2",
+    "next": "15.5.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "sharp": "^0.34.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

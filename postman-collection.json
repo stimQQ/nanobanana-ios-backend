@@ -1,0 +1,350 @@
+{
+  "info": {
+    "name": "NanoBanana API",
+    "description": "Complete API collection for NanoBanana backend testing",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Basic health check endpoint"
+          }
+        },
+        {
+          "name": "Status Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "status"]
+            },
+            "description": "Comprehensive status check with service health"
+          }
+        },
+        {
+          "name": "Run All Tests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "test"]
+            },
+            "description": "Run complete test suite"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Apple Sign In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.token) {",
+                  "        pm.collectionVariables.set('authToken', response.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"identityToken\": \"your-apple-identity-token\",\n    \"user\": {\n        \"email\": \"user@example.com\",\n        \"name\": \"Test User\",\n        \"appleUserId\": \"apple-user-id\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/apple",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "apple"]
+            },
+            "description": "Authenticate with Apple ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "profile"]
+            },
+            "description": "Get authenticated user's profile"
+          }
+        },
+        {
+          "name": "Get User Credits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/credits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "credits"]
+            },
+            "description": "Get user's credit balance and history"
+          }
+        },
+        {
+          "name": "Get Generation History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/generations?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "generations"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get user's image generation history"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Image Generation",
+      "item": [
+        {
+          "name": "Text to Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"prompt\": \"A beautiful sunset over mountains\",\n    \"mode\": \"text-to-image\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/generate/image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "generate", "image"]
+            },
+            "description": "Generate image from text prompt"
+          }
+        },
+        {
+          "name": "Image to Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "prompt",
+                  "value": "Transform this image into a painting style",
+                  "type": "text"
+                },
+                {
+                  "key": "mode",
+                  "value": "image-to-image",
+                  "type": "text"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": [],
+                  "description": "Upload image file(s)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/generate/image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "generate", "image"]
+            },
+            "description": "Transform existing image(s) with AI"
+          }
+        },
+        {
+          "name": "Upload Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": [],
+                  "description": "Image file to upload"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "image"]
+            },
+            "description": "Upload image to storage"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "Get Subscription Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "subscription", "status"]
+            },
+            "description": "Get current subscription status"
+          }
+        },
+        {
+          "name": "Purchase Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"productId\": \"com.nanobanana.subscription.pro\",\n    \"transactionId\": \"transaction-123\",\n    \"receiptData\": \"base64-receipt-data\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/purchase",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "subscription", "purchase"]
+            },
+            "description": "Process subscription purchase"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "console.log('Sending request to:', pm.request.url.toString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "pm.test('Response time is less than 3000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+          "});",
+          "",
+          "if (pm.response.code !== 200 && pm.response.code !== 201) {",
+          "    console.log('Response:', pm.response.text());",
+          "}"
+        ]
+      }
+    }
+  ]
+}

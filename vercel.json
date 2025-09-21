@@ -1,0 +1,51 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install --force",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/generate/image/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/upload/image/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-Requested-With, Content-Type, Authorization, Accept-Language"
+        },
+        {
+          "key": "Access-Control-Max-Age",
+          "value": "86400"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_KEY": "SUPABASE_SERVICE_KEY",
+    "JWT_SECRET": "JWT_SECRET",
+    "APPLE_CLIENT_ID": "APPLE_CLIENT_ID",
+    "APPLE_TEAM_ID": "APPLE_TEAM_ID",
+    "APPLE_KEY_ID": "APPLE_KEY_ID",
+    "APPLE_PRIVATE_KEY": "APPLE_PRIVATE_KEY",
+    "APICORE_API_KEY": "APICORE_API_KEY",
+    "APICORE_BASE_URL": "APICORE_BASE_URL",
+    "NODE_ENV": "production"
+  }
+}
