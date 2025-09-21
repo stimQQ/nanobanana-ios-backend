@@ -151,16 +151,32 @@ export async function POST(req: NextRequest) {
   return withAuth(req, async (authenticatedReq: AuthenticatedRequest) => {
     const corsResponse = new NextResponse(null, { status: 200, headers: corsHeaders() });
 
+    // Declare body variable outside try block for access in catch block
+    let body: GenerateImageRequest | undefined;
+
     try {
       const { user } = authenticatedReq;
-      const body = await req.json() as GenerateImageRequest;
+
+      // Check if user exists (should always exist after withAuth, but TypeScript needs the check)
+      if (!user) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Authentication required'
+          } as GenerateImageResponse,
+          { status: 401, headers: corsHeaders() }
+        );
+      }
+
+      body = await req.json() as GenerateImageRequest;
       const { prompt, language = 'en', generation_type = 'text-to-image', input_images } = body;
 
-      console.log(`Image generation request: type=${generation_type}, user=${user.userId}`);
+      console.log(`Image generation request: type=${generation_type}, user=${user.id}`);
 
       // Check user credits
       const creditsNeeded = getCreditsForGenerationType(generation_type);
-      const hasCredits = await checkUserCredits(user.userId, creditsNeeded);
+      const checkResult = await checkUserCredits(user.id, creditsNeeded);
+      const hasCredits = checkResult.hasCredits;
 
       if (!hasCredits) {
         return NextResponse.json(
@@ -184,13 +200,19 @@ export async function POST(req: NextRequest) {
       });
 
       // Deduct credits after successful generation
-      const creditsRemaining = await deductCredits(user.userId, creditsNeeded);
+      const deductResult = await deductCredits(
+        user.id,
+        creditsNeeded,
+        'usage',
+        `Image generation: ${generation_type}`
+      );
+      const creditsRemaining = deductResult.newBalance;
 
       // Save generation record to database
       const { data: generation, error: dbError } = await supabaseAdmin
         .from('image_generations')
         .insert({
-          user_id: user.userId,
+          user_id: user.id,
           prompt,
           generation_type: generation_type,
           image_url: imageUrl,
@@ -208,10 +230,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: true,
-          imageUrl,
-          creditsUsed: creditsNeeded,
-          creditsRemaining,
-          generationId: generation?.id
+          image_url: imageUrl,
+          credits_used: creditsNeeded,
+          remaining_credits: creditsRemaining,
+          generation_id: generation?.id
         } as GenerateImageResponse,
         { headers: corsHeaders() }
       );
@@ -225,14 +247,15 @@ export async function POST(req: NextRequest) {
       // Refund credits if generation failed (not for insufficient credits)
       if (authenticatedReq.user && !error.message?.includes('credits')) {
         try {
-          const creditsNeeded = getCreditsForGenerationType(
-            (await req.json()).generation_type || 'text-to-image'
-          );
+          // Parse body safely - we already read it once, so use the parsed body variable if available
+          const generationType = body?.generation_type || 'text-to-image';
+          const creditsNeeded = getCreditsForGenerationType(generationType);
+
           await supabaseAdmin.rpc('add_credits', {
-            p_user_id: authenticatedReq.user.userId,
+            p_user_id: authenticatedReq.user.id,
             p_credits: creditsNeeded
           });
-          console.log(`Refunded ${creditsNeeded} credits to user ${authenticatedReq.user.userId}`);
+          console.log(`Refunded ${creditsNeeded} credits to user ${authenticatedReq.user.id}`);
         } catch (refundError) {
           console.error('Failed to refund credits:', refundError);
         }
