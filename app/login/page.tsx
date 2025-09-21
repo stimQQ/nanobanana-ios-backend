@@ -113,7 +113,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             {/* Google Sign In */}
             <div className="flex justify-center">
-              <div className="w-full google-signin-button">
+              <div className="w-full max-w-md google-signin-button">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => {
@@ -122,7 +122,7 @@ export default function LoginPage() {
                   }}
                   theme="filled_blue"
                   size="large"
-                  width="100%"
+                  width={400}
                   text="continue_with"
                 />
               </div>

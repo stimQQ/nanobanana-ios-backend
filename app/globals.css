@@ -47,6 +47,23 @@ body {
   background: var(--color-dark);
 }
 
+/* Google Sign-In Button Responsive Styles */
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.google-signin-button > div {
+  max-width: 100% !important;
+}
+
+@media (max-width: 640px) {
+  .google-signin-button iframe {
+    max-width: 100% !important;
+  }
+}
+
 /* Custom animations */
 @keyframes fadeIn {
   from {
@@ -406,19 +423,20 @@ html {
 }
 
 /* Google OAuth Button Styling */
-[data-testid="google-oauth-button"] {
-  width: 100% !important;
-  min-height: 48px !important;
-  border-radius: 12px !important;
-  transition: all 0.2s ease !important;
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
-[data-testid="google-oauth-button"]:hover {
-  transform: scale(1.02) !important;
+.google-signin-button > div {
+  width: 100%;
+  max-width: 400px;
 }
 
-/* Ensure Google button iframe takes full width */
-.google-signin-button iframe {
-  width: 100% !important;
-  min-height: 48px !important;
+/* Responsive Google button adjustments */
+@media (max-width: 640px) {
+  .google-signin-button > div {
+    max-width: 100%;
+  }
 }
