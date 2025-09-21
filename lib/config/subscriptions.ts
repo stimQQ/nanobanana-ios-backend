@@ -9,6 +9,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     name: 'Free',
     description: 'Get started with 10 free attempts and 40 credits',
     apple_product_id: '',
+    stripe_price_id: '',
   },
   basic: {
     tier: 'basic',
@@ -18,6 +19,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     name: 'Basic',
     description: '800 credits, 200 image generations per month',
     apple_product_id: 'com.nanobanana.basic',
+    stripe_price_id: process.env.STRIPE_PRICE_ID_BASIC || '',
   },
   pro: {
     tier: 'pro',
@@ -27,6 +29,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     name: 'Pro',
     description: '3000 credits, 750 image generations per month',
     apple_product_id: 'com.nanobanana.pro',
+    stripe_price_id: process.env.STRIPE_PRICE_ID_PRO || '',
   },
   premium: {
     tier: 'premium',
@@ -36,6 +39,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
     name: 'Premium',
     description: '8000 credits, 2000 image generations per month',
     apple_product_id: 'com.nanobanana.premium',
+    stripe_price_id: process.env.STRIPE_PRICE_ID_PREMIUM || '',
   },
 };
 

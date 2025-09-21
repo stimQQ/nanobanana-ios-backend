@@ -8,6 +8,7 @@ export type Language = 'en' | 'cn' | 'jp' | 'kr' | 'de' | 'fr';
 export interface User {
   id: string;
   apple_id: string;
+  stripe_customer_id?: string;
   email?: string;
   display_name?: string;
   avatar_url?: string;
@@ -24,6 +25,10 @@ export interface Subscription {
   id: string;
   user_id: string;
   apple_transaction_id?: string;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  stripe_price_id?: string;
+  payment_provider?: 'apple' | 'stripe';
   tier: SubscriptionTier;
   price: number;
   credits_per_month: number;
@@ -43,6 +48,7 @@ export interface SubscriptionPlan {
   name: string;
   description: string;
   apple_product_id: string;
+  stripe_price_id?: string;
 }
 
 export interface ImageGeneration {
@@ -75,6 +81,9 @@ export interface PaymentHistory {
   user_id: string;
   subscription_id?: string;
   apple_transaction_id?: string;
+  stripe_payment_intent_id?: string;
+  stripe_session_id?: string;
+  payment_provider?: 'apple' | 'stripe';
   amount: number;
   currency: string;
   status: PaymentStatus;

@@ -9,6 +9,8 @@ import { apiClient } from '@/lib/api/client';
 import type { SubscriptionPlan, Subscription } from '@/lib/types/database';
 import Link from 'next/link';
 import DefaultLayout from '@/components/layout/DefaultLayout';
+import { createCheckoutSession, redirectToCheckout } from '@/lib/utils/stripe-client';
+import { SUBSCRIPTION_PLANS } from '@/lib/config/subscriptions';
 
 export default function SubscriptionPage() {
   const { user, isAuthenticated, refreshProfile } = useAuth();
@@ -16,45 +18,14 @@ export default function SubscriptionPage() {
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
-  const defaultPlans: SubscriptionPlan[] = [
-    {
-      tier: 'free',
-      price: 0,
-      credits: 10,
-      images: 5,
-      name: 'Free',
-      description: 'Perfect for trying out NanoBanana',
-      apple_product_id: 'com.nanobanana.free',
-    },
-    {
-      tier: 'basic',
-      price: 9.99,
-      credits: 100,
-      images: 50,
-      name: 'Basic',
-      description: 'Great for hobbyists and casual creators',
-      apple_product_id: 'com.nanobanana.basic',
-    },
-    {
-      tier: 'pro',
-      price: 29.99,
-      credits: 500,
-      images: 250,
-      name: 'Pro',
-      description: 'Ideal for professionals and content creators',
-      apple_product_id: 'com.nanobanana.pro',
-    },
-    {
-      tier: 'premium',
-      price: 99.99,
-      credits: 2000,
-      images: 1000,
-      name: 'Premium',
-      description: 'Unlimited creativity for power users',
-      apple_product_id: 'com.nanobanana.premium',
-    },
-  ];
+  // Detect if this is a web platform (not iOS)
+  const isWebPlatform = typeof window !== 'undefined' && !window.navigator.userAgent.match(/iPhone|iPad|iPod/i);
+
+  // Use subscription plans from config
+  const defaultPlans: SubscriptionPlan[] = Object.values(SUBSCRIPTION_PLANS);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -82,25 +53,60 @@ export default function SubscriptionPage() {
       return;
     }
 
-    // In a real app, this would integrate with Apple's in-app purchase system
-    alert(`Purchase ${plan.name} plan: This would trigger the iOS in-app purchase flow`);
+    if (plan.tier === 'free') {
+      return;
+    }
 
-    // Simulated purchase for demo
+    setPurchaseLoading(plan.tier);
+    setPurchaseError(null);
+
     try {
-      // const response = await apiClient.purchaseSubscription({
-      //   tier: plan.tier,
-      //   receipt_data: 'mock_receipt',
-      //   transaction_id: 'mock_transaction_' + Date.now(),
-      // });
-      //
-      // if (response.success) {
-      //   await refreshProfile();
-      //   await fetchSubscriptionStatus();
-      //   alert('Subscription activated successfully!');
-      // }
+      if (isWebPlatform) {
+        // Web platform: Use Stripe
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          setPurchaseError('Authentication required. Please sign in again.');
+          setPurchaseLoading(null);
+          return;
+        }
+
+        const { sessionId, error } = await createCheckoutSession(
+          {
+            tier: plan.tier as 'basic' | 'pro' | 'premium',
+            successUrl: `${window.location.origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}/subscription`,
+          },
+          token
+        );
+
+        if (error) {
+          setPurchaseError(error);
+          setPurchaseLoading(null);
+          return;
+        }
+
+        if (sessionId) {
+          const { error: redirectError } = await redirectToCheckout(sessionId);
+          if (redirectError) {
+            setPurchaseError(redirectError);
+          }
+        }
+      } else {
+        // iOS platform: Use Apple In-App Purchase
+        alert(`Purchase ${plan.name} plan: This would trigger the iOS in-app purchase flow`);
+
+        // Simulated purchase for demo - you would integrate with actual iOS purchase here
+        // const response = await apiClient.purchaseSubscription({
+        //   tier: plan.tier,
+        //   receipt_data: 'ios_receipt',
+        //   transaction_id: 'ios_transaction_' + Date.now(),
+        // });
+      }
     } catch (err) {
       console.error('Purchase failed:', err);
-      alert('Purchase failed. Please try again.');
+      setPurchaseError('Purchase failed. Please try again.');
+    } finally {
+      setPurchaseLoading(null);
     }
   };
 
@@ -163,7 +169,25 @@ export default function SubscriptionPage() {
           <p className="text-xl text-gray-600 dark:text-gray-400">
             Unlock more credits and features with our subscription plans
           </p>
+          {isWebPlatform && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              Secure payment processing by Stripe
+            </p>
+          )}
         </div>
+
+        {/* Error Display */}
+        {purchaseError && (
+          <div className="mb-8 mx-auto max-w-2xl">
+            <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+              <CardContent className="p-4">
+                <p className="text-red-600 dark:text-red-400 text-center">
+                  {purchaseError}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Current Status */}
         <Card className="mb-8">
@@ -270,10 +294,16 @@ export default function SubscriptionPage() {
                 <Button
                   variant={isPlanActive(plan.tier) ? 'secondary' : 'primary'}
                   fullWidth
-                  disabled={isPlanActive(plan.tier)}
+                  disabled={isPlanActive(plan.tier) || purchaseLoading === plan.tier}
                   onClick={() => handlePurchase(plan)}
                 >
-                  {isPlanActive(plan.tier) ? 'Current Plan' : 'Choose Plan'}
+                  {isPlanActive(plan.tier)
+                    ? 'Current Plan'
+                    : purchaseLoading === plan.tier
+                    ? 'Processing...'
+                    : isWebPlatform
+                    ? 'Subscribe with Card'
+                    : 'Subscribe with Apple Pay'}
                 </Button>
               </CardContent>
             </Card>
