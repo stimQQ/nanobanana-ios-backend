@@ -22,7 +22,13 @@ export default function SubscriptionPage() {
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   // Detect if this is a web platform (not iOS)
-  const isWebPlatform = typeof window !== 'undefined' && !window.navigator.userAgent.match(/iPhone|iPad|iPod/i);
+  // Check if running in iOS app WebView or regular browser
+  const isIOSApp = typeof window !== 'undefined' &&
+    window.navigator.userAgent.match(/iPhone|iPad|iPod/i) &&
+    (window as any).webkit?.messageHandlers?.ios;
+
+  // Use Stripe for all web browsers, including Safari on iOS (unless in app WebView)
+  const isWebPlatform = typeof window !== 'undefined' && !isIOSApp;
 
   // Use subscription plans from config
   const defaultPlans: SubscriptionPlan[] = Object.values(SUBSCRIPTION_PLANS);
@@ -60,9 +66,18 @@ export default function SubscriptionPage() {
     setPurchaseLoading(plan.tier);
     setPurchaseError(null);
 
+    // Debug logging
+    console.log('Platform detection:', {
+      isIOSApp,
+      isWebPlatform,
+      userAgent: window.navigator.userAgent,
+      hasWebkitHandler: !!(window as any).webkit?.messageHandlers?.ios
+    });
+
     try {
       if (isWebPlatform) {
         // Web platform: Use Stripe
+        console.log('Using Stripe payment for web platform');
         const token = localStorage.getItem('auth_token');
         if (!token) {
           setPurchaseError('Authentication required. Please sign in again.');
@@ -92,15 +107,23 @@ export default function SubscriptionPage() {
           }
         }
       } else {
-        // iOS platform: Use Apple In-App Purchase
-        alert(`Purchase ${plan.name} plan: This would trigger the iOS in-app purchase flow`);
+        // iOS App platform: Use Apple In-App Purchase
+        console.log('iOS App detected, using Apple Pay');
 
-        // Simulated purchase for demo - you would integrate with actual iOS purchase here
-        // const response = await apiClient.purchaseSubscription({
-        //   tier: plan.tier,
-        //   receipt_data: 'ios_receipt',
-        //   transaction_id: 'ios_transaction_' + Date.now(),
-        // });
+        // This code should only run inside the actual iOS app
+        // For web browsers (including Safari on iOS), Stripe should be used
+        if ((window as any).webkit?.messageHandlers?.ios) {
+          // Send message to iOS app to trigger in-app purchase
+          (window as any).webkit.messageHandlers.ios.postMessage({
+            action: 'purchase',
+            tier: plan.tier,
+            productId: plan.apple_product_id
+          });
+        } else {
+          // Fallback: This shouldn't happen if detection works correctly
+          console.error('Platform detection error: Unable to determine payment method');
+          setPurchaseError('Unable to process payment. Please try refreshing the page.');
+        }
       }
     } catch (err) {
       console.error('Purchase failed:', err);

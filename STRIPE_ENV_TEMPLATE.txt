@@ -1,0 +1,12 @@
+# 将以下内容更新到你的 .env.local 文件中
+# 替换成你从Stripe Dashboard获取的真实值
+
+# Stripe Configuration
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_你的真实publishable_key
+STRIPE_SECRET_KEY=sk_test_你的真实secret_key
+STRIPE_WEBHOOK_SECRET=whsec_你的webhook_signing_secret
+
+# Stripe Price IDs (从产品页面获取)
+STRIPE_PRICE_ID_BASIC=price_你的basic_price_id
+STRIPE_PRICE_ID_PRO=price_你的pro_price_id
+STRIPE_PRICE_ID_PREMIUM=price_你的premium_price_id
