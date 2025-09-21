@@ -113,6 +113,7 @@ export interface GenerateImageRequest {
   prompt: string;
   input_images?: string[];
   generation_type: GenerationType;
+  language?: Language;
 }
 
 export interface GenerateImageResponse {
