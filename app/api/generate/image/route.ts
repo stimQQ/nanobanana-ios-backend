@@ -149,7 +149,7 @@ async function retryApiCall<T>(
 
 export async function POST(req: NextRequest) {
   return withAuth(req, async (authenticatedReq: AuthenticatedRequest) => {
-    const corsResponse = new NextResponse(null, { status: 200, headers: corsHeaders });
+    const corsResponse = new NextResponse(null, { status: 200, headers: corsHeaders() });
 
     try {
       const { user } = authenticatedReq;
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
             success: false,
             error: translate('errors.insufficientCredits', language)
           } as GenerateImageResponse,
-          { status: 402, headers: corsHeaders }
+          { status: 402, headers: corsHeaders() }
         );
       }
 
@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
           creditsRemaining,
           generationId: generation?.id
         } as GenerateImageResponse,
-        { headers: corsHeaders }
+        { headers: corsHeaders() }
       );
 
     } catch (error: any) {
@@ -244,12 +244,12 @@ export async function POST(req: NextRequest) {
           success: false,
           error: errorMessage
         } as GenerateImageResponse,
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: corsHeaders() }
       );
     }
   });
 }
 
 export async function OPTIONS(req: NextRequest) {
-  return new NextResponse(null, { status: 200, headers: corsHeaders });
+  return new NextResponse(null, { status: 200, headers: corsHeaders() });
 }
