@@ -4,11 +4,12 @@ import { supabaseAdmin } from '@/lib/supabase/client';
 import { GenerateImageRequest, GenerateImageResponse, GenerationType } from '@/lib/types/database';
 import { checkUserCredits, deductCredits, getCreditsForGenerationType } from '@/lib/utils/credits';
 import { translate } from '@/lib/config/languages';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
 
 // Initialize Gemini API configuration
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyDvjN4w54QMfvUF3TzMmpP6_H3pR-ngxhE';
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const GEMINI_MODEL = 'gemini-2.5-flash-image-preview';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds
 
@@ -34,20 +35,68 @@ async function imageUrlToBase64(url: string): Promise<string> {
 // Helper function to generate images using Gemini API
 async function generateImage(prompt: string, inputImages?: string[]): Promise<string> {
   try {
-    console.log('Using Gemini model: gemini-2.5-flash-image-preview');
+    console.log('Using Gemini model:', GEMINI_MODEL);
     console.log('Prompt:', prompt);
+    console.log('Input images count:', inputImages?.length || 0);
 
-    // Use the Gemini Flash model for image generation
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image-preview' });
+    // Prepare the request body
+    let requestBody: any;
 
-    // Create a detailed prompt for image generation
-    const detailedPrompt = `Generate an image of: ${prompt}`;
+    if (inputImages && inputImages.length > 0) {
+      // For image-to-image or multi-image generation
+      const parts: any[] = [];
 
-    const result = await model.generateContent(detailedPrompt);
-    const response = await result.response;
+      // Add the text prompt
+      parts.push({
+        text: `Based on the provided image(s), generate a new image with the following description: ${prompt}`
+      });
+
+      // Add all input images as inline data
+      for (const imageUrl of inputImages) {
+        try {
+          const base64Data = await imageUrlToBase64(imageUrl);
+          parts.push({
+            inlineData: {
+              mimeType: 'image/png',
+              data: base64Data
+            }
+          });
+          console.log('Added input image to request');
+        } catch (error) {
+          console.error('Error processing input image:', error);
+        }
+      }
+
+      requestBody = {
+        contents: [{
+          parts: parts
+        }]
+      };
+    } else {
+      // For text-to-image generation
+      requestBody = {
+        contents: [{
+          parts: [{
+            text: `Generate an image of: ${prompt}`
+          }]
+        }]
+      };
+    }
+
+    // Make the API call using axios
+    const response = await axios.post(
+      `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+      requestBody,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000 // 60 seconds timeout
+      }
+    );
 
     // Check if the response contains image data
-    const candidates = response.candidates;
+    const candidates = response.data.candidates;
     if (candidates && candidates[0]?.content?.parts) {
       const parts = candidates[0].content.parts;
 
@@ -102,16 +151,21 @@ async function generateImage(prompt: string, inputImages?: string[]): Promise<st
   } catch (error: any) {
     console.error('Gemini API error:', {
       message: error.message,
-      stack: error.stack
+      response: error.response?.data,
+      status: error.response?.status
     });
 
     // Handle specific error cases
-    if (error.message?.includes('API key')) {
+    if (error.response?.status === 401 || error.message?.includes('API key')) {
       throw new Error('Invalid API key. Please check your configuration.');
     }
 
-    if (error.message?.includes('quota')) {
+    if (error.response?.status === 429 || error.message?.includes('quota')) {
       throw new Error('API quota exceeded. Please try again later.');
+    }
+
+    if (error.response?.status === 400) {
+      throw new Error('Invalid request. Please check your input.');
     }
 
     if (error.message?.includes('No image')) {
