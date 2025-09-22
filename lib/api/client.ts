@@ -182,7 +182,11 @@ class ApiClient {
     available_plans: any[];
   }> {
     const response = await this.client.get('/api/subscription/status');
-    return response.data;
+    // Map the API response to the expected format
+    return {
+      subscription: response.data.active_subscription || null,
+      available_plans: response.data.available_plans || []
+    };
   }
 
   async purchaseSubscription(data: SubscriptionRequest): Promise<SubscriptionResponse> {

@@ -13,7 +13,7 @@ import { createCheckoutSession, redirectToCheckout } from '@/lib/utils/stripe-cl
 import { SUBSCRIPTION_PLANS } from '@/lib/config/subscriptions';
 
 export default function SubscriptionPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,8 +29,8 @@ export default function SubscriptionPage() {
   // Use Stripe for all web browsers, including Safari on iOS (unless in app WebView)
   const isWebPlatform = typeof window !== 'undefined' && !isIOSApp;
 
-  // Use subscription plans from config
-  const defaultPlans: SubscriptionPlan[] = Object.values(SUBSCRIPTION_PLANS);
+  // Use subscription plans from config - memoized to prevent recreating on every render
+  const defaultPlans = React.useMemo<SubscriptionPlan[]>(() => Object.values(SUBSCRIPTION_PLANS), []);
 
   const fetchSubscriptionStatus = useCallback(async () => {
     setIsLoading(true);
@@ -47,10 +47,15 @@ export default function SubscriptionPage() {
   }, [defaultPlans]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchSubscriptionStatus();
+    if (!authLoading) {
+      if (isAuthenticated) {
+        fetchSubscriptionStatus();
+      } else {
+        // If not authenticated and auth check is complete, set loading to false
+        setIsLoading(false);
+      }
     }
-  }, [isAuthenticated, fetchSubscriptionStatus]);
+  }, [isAuthenticated, authLoading, fetchSubscriptionStatus]);
 
   const handlePurchase = async (plan: SubscriptionPlan) => {
     if (!isAuthenticated) {
@@ -146,6 +151,17 @@ export default function SubscriptionPage() {
     return user?.subscription_tier === tier;
   };
 
+  // Show loading while auth is being checked
+  if (authLoading || isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-20">
+        <div className="flex justify-center">
+          <Loading size="lg" text="Loading subscription plans..." />
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto px-4 py-20">
@@ -165,16 +181,6 @@ export default function SubscriptionPage() {
             </Link>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-20">
-        <div className="flex justify-center">
-          <Loading size="lg" text="Loading subscription plans..." />
-        </div>
       </div>
     );
   }
