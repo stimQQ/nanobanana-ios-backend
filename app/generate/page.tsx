@@ -133,7 +133,7 @@ export default function GeneratePage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, _index?: number) => {
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
@@ -308,18 +308,11 @@ export default function GeneratePage() {
         ));
 
         // Show success toast with gallery link
-        showToast(
-          <div className="flex items-center justify-between w-full">
-            <span>✨ Image generated successfully!</span>
-            <Link
-              href="/gallery"
-              className="ml-3 px-3 py-1 bg-[#FFD700] text-black rounded-md hover:bg-[#DAA520] transition-colors font-medium text-sm"
-            >
-              View in Gallery →
-            </Link>
-          </div>,
-          'success'
-        );
+        showToast({
+          message: '✨ Image generated successfully! View in Gallery →',
+          type: 'success',
+          duration: 3000
+        });
 
         // Save assistant message with generated image to database
         try {
@@ -345,7 +338,6 @@ export default function GeneratePage() {
           });
 
           console.log('✅ [GENERATE PAGE] Chat message saved:', {
-            success: saveResult?.success,
             messageId: saveResult?.message?.id,
             sessionId: saveResult?.session_id
           });
@@ -357,7 +349,11 @@ export default function GeneratePage() {
           });
 
           // Show error toast to user
-          showToast('Image generated but history save failed', 'error');
+          showToast({
+            message: 'Image generated but history save failed',
+            type: 'error',
+            duration: 3000
+          });
         }
       }
     } catch (err: any) {

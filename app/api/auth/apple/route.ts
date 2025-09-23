@@ -129,8 +129,8 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(response, { status: 200, headers: corsHeaders() });
-  } catch (error) {
-    console.error('Authentication error:', error);
+  } catch (_error) {
+    console.error('Authentication error:', _error);
     return NextResponse.json(
       { success: false, error: 'Authentication failed' },
       { status: 500, headers: corsHeaders() }

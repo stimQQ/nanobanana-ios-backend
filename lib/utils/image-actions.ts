@@ -63,11 +63,11 @@ export async function downloadImage(imageUrl: string, filename?: string) {
       document.body.removeChild(link);
       return { success: true, fallback: true };
     }
-  } catch (error) {
-    console.error('Error downloading image:', error);
+  } catch (_error) {
+    console.error('Error downloading image:', _error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to download image'
+      error: _error instanceof Error ? _error.message : 'Failed to download image'
     };
   }
 }
