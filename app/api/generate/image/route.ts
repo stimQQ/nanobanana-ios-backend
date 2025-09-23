@@ -117,6 +117,8 @@ async function generateImage(prompt: string, inputImages?: string[]): Promise<st
             // Convert base64 to Buffer
             const imageBuffer = Buffer.from(base64Data, 'base64');
 
+            console.log(`Attempting to upload image: ${fileName}, size: ${imageBuffer.length} bytes`);
+
             const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
               .from('images')
               .upload(fileName, imageBuffer, {
@@ -130,13 +132,33 @@ async function generateImage(prompt: string, inputImages?: string[]): Promise<st
                 .from('images')
                 .getPublicUrl(fileName);
 
-              console.log('Image saved to storage:', publicUrl);
-              return publicUrl;
+              console.log('Image successfully saved to storage:', {
+                fileName,
+                path: uploadData.path,
+                publicUrl
+              });
+
+              // Verify the URL is accessible
+              if (publicUrl && publicUrl.startsWith('http')) {
+                return publicUrl;
+              } else {
+                console.error('Invalid public URL generated:', publicUrl);
+                throw new Error('Failed to generate valid public URL');
+              }
             } else if (uploadError) {
-              console.error('Upload error:', uploadError);
+              console.error('Supabase upload error:', {
+                error: uploadError,
+                fileName,
+                bucket: 'images'
+              });
+              throw uploadError;
             }
           } catch (storageError) {
-            console.error('Storage error:', storageError);
+            console.error('Storage operation failed:', {
+              error: storageError,
+              message: storageError instanceof Error ? storageError.message : 'Unknown error'
+            });
+            // Don't throw here, fall back to data URL
           }
 
           // If storage fails, return the base64 data URL
@@ -255,22 +277,43 @@ export async function POST(req: NextRequest) {
       const creditsRemaining = deductResult.newBalance;
 
       // Save generation record to database
+      console.log('Saving generation to database:', {
+        user_id: user.id,
+        prompt: prompt.substring(0, 50) + '...',
+        generation_type,
+        imageUrl: imageUrl.substring(0, 100) + '...',
+        credits_used: creditsNeeded
+      });
+
       const { data: generation, error: dbError } = await supabaseAdmin
         .from('image_generations')
         .insert({
           user_id: user.id,
           prompt,
           generation_type: generation_type,
-          image_url: imageUrl,
-          language,
-          credits_used: creditsNeeded
+          output_image_url: imageUrl,  // Fixed: Changed from image_url to output_image_url
+          status: 'completed',          // Added: Set status to completed
+          credits_used: creditsNeeded,
+          input_images: input_images,  // Added: Save input images if provided
+          metadata: { language }        // Store language in metadata field
         })
         .select()
         .single();
 
       if (dbError) {
-        console.error('Database error:', dbError);
-        // Don't fail the request if DB save fails
+        console.error('Failed to save generation to database:', {
+          error: dbError,
+          code: dbError.code,
+          message: dbError.message,
+          details: dbError.details
+        });
+        // Still return the image even if DB save fails
+        // User still has the image, just not in history
+      } else {
+        console.log('Generation saved successfully:', {
+          id: generation?.id,
+          status: generation?.status
+        });
       }
 
       return NextResponse.json(
