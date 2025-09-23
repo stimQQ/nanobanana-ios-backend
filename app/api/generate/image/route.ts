@@ -295,7 +295,10 @@ export async function POST(req: NextRequest) {
           status: 'completed',          // Added: Set status to completed
           credits_used: creditsNeeded,
           input_images: input_images,  // Added: Save input images if provided
-          metadata: { language }        // Store language in metadata field
+          metadata: {
+            language,
+            model: 'gemini-2.5-flash-image-preview'  // Store model info in metadata
+          }
         })
         .select()
         .single();
