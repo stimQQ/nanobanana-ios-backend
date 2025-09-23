@@ -307,9 +307,32 @@ export default function GeneratePage() {
           msg.id === generatingMessage.id ? assistantMessage : msg
         ));
 
+        // Show success toast with gallery link
+        showToast(
+          <div className="flex items-center justify-between w-full">
+            <span>✨ Image generated successfully!</span>
+            <Link
+              href="/gallery"
+              className="ml-3 px-3 py-1 bg-[#FFD700] text-black rounded-md hover:bg-[#DAA520] transition-colors font-medium text-sm"
+            >
+              View in Gallery →
+            </Link>
+          </div>,
+          'success'
+        );
+
         // Save assistant message with generated image to database
         try {
-          await apiClient.saveChatMessage({
+          console.log('📝 [GENERATE PAGE] Attempting to save chat message:', {
+            hasImageUrl: !!response.image_url,
+            imageUrlLength: response.image_url?.length,
+            imageUrlPreview: response.image_url?.substring(0, 100),
+            generationId: response.generation_id,
+            sessionId: sessionId,
+            timestamp: new Date().toISOString()
+          });
+
+          const saveResult = await apiClient.saveChatMessage({
             message_type: 'assistant',
             content: assistantMessage.content,
             image_url: response.image_url,
@@ -320,8 +343,21 @@ export default function GeneratePage() {
             credits_used: response.credits_used,
             session_id: sessionId || undefined,
           });
+
+          console.log('✅ [GENERATE PAGE] Chat message saved:', {
+            success: saveResult?.success,
+            messageId: saveResult?.message?.id,
+            sessionId: saveResult?.session_id
+          });
         } catch (saveError) {
-          console.error('Error saving assistant message:', saveError);
+          console.error('❌ [GENERATE PAGE] Failed to save assistant message:', {
+            error: saveError,
+            message: saveError instanceof Error ? saveError.message : 'Unknown error',
+            stack: saveError instanceof Error ? saveError.stack : undefined
+          });
+
+          // Show error toast to user
+          showToast('Image generated but history save failed', 'error');
         }
       }
     } catch (err: any) {
@@ -632,6 +668,15 @@ export default function GeneratePage() {
                               </div>
                               <div className="flex items-center justify-between">
                                 <div className="flex gap-2">
+                                  <Link href="/gallery">
+                                    <Button
+                                      size="sm"
+                                      variant="primary"
+                                      className="bg-[#FFD700] hover:bg-[#DAA520] text-black font-medium"
+                                    >
+                                      🎨 Gallery
+                                    </Button>
+                                  </Link>
                                   <Button
                                     size="sm"
                                     variant="secondary"
@@ -656,7 +701,7 @@ export default function GeneratePage() {
                                   {message.prompt && message.imageUrl && (
                                     <Button
                                       size="sm"
-                                      variant="yellow"
+                                      variant="secondary"
                                       onClick={() => handleEditAgain(
                                         message.prompt!,
                                         message.imageUrl!

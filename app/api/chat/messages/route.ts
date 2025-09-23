@@ -187,6 +187,18 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Log what we're about to save
+      console.log('💾 [CHAT API] Saving message:', {
+        user_id: user.id,
+        session_id: actualSessionId,
+        message_type,
+        hasImageUrl: !!image_url,
+        imageUrlLength: image_url?.length,
+        imageUrlPreview: image_url?.substring(0, 100),
+        generation_id,
+        timestamp: new Date().toISOString()
+      });
+
       // Create the message record
       const { data: message, error } = await supabaseAdmin
         .from('chat_messages')
@@ -208,7 +220,12 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) {
-        console.error('Error saving message:', error);
+        console.error('❌ [CHAT API] Error saving message:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details
+        });
         return NextResponse.json(
           {
             success: false,
@@ -217,6 +234,12 @@ export async function POST(request: NextRequest) {
           { status: 500, headers: corsHeaders() }
         );
       }
+
+      console.log('✅ [CHAT API] Message saved successfully:', {
+        messageId: message?.id,
+        hasImageUrl: !!message?.image_url,
+        savedImageUrl: message?.image_url?.substring(0, 100)
+      });
 
       return NextResponse.json(
         {

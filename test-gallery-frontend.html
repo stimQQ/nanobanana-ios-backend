@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Frontend Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #fff;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #065f46; }
+        .error { background: #991b1b; }
+        .info { background: #1e40af; }
+        .warning { background: #92400e; }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .image-card {
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #111;
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .image-info {
+            padding: 10px;
+            font-size: 12px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background: #ffd700;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #daa520;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #444;
+        }
+        .log-success { border-left-color: #10b981; }
+        .log-error { border-left-color: #ef4444; }
+        .log-info { border-left-color: #3b82f6; }
+        .log-warning { border-left-color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <h1>🎨 Gallery Frontend Test</h1>
+
+    <div class="controls">
+        <button onclick="authenticate()">1. Authenticate</button>
+        <button onclick="fetchGallery()">2. Fetch Gallery</button>
+        <button onclick="generateImage()">3. Generate Image</button>
+        <button onclick="refreshGallery()">4. Refresh Gallery</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div id="status"></div>
+
+    <h2>Debug Log</h2>
+    <div id="log" class="log"></div>
+
+    <h2>Gallery</h2>
+    <div id="gallery" class="gallery"></div>
+
+    <script>
+        let authToken = null;
+        const baseUrl = 'http://localhost:3000';
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            addLog('Log cleared', 'info');
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            addLog(message, type);
+        }
+
+        async function authenticate() {
+            try {
+                addLog('Starting authentication...', 'info');
+
+                const response = await fetch(`${baseUrl}/api/auth/dev`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        name: 'Test User'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.token) {
+                    authToken = data.token;
+                    localStorage.setItem('auth_token', authToken);
+                    updateStatus('✅ Authentication successful!', 'success');
+                    addLog(`User ID: ${data.user.id}`, 'success');
+                    addLog(`Email: ${data.user.email}`, 'success');
+                    addLog(`Token saved to localStorage`, 'success');
+                } else {
+                    throw new Error('No token received');
+                }
+            } catch (error) {
+                updateStatus(`❌ Authentication failed: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        async function fetchGallery() {
+            if (!authToken) {
+                authToken = localStorage.getItem('auth_token');
+                if (!authToken) {
+                    updateStatus('⚠️ Please authenticate first', 'warning');
+                    return;
+                }
+            }
+
+            try {
+                addLog('Fetching gallery...', 'info');
+                addLog(`Using token: ${authToken.substring(0, 20)}...`, 'info');
+
+                const response = await fetch(`${baseUrl}/api/user/generations`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                addLog(`Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                addLog(`Response data:`, 'info');
+                console.log('Gallery response:', data);
+
+                if (data.success !== false) {
+                    const count = data.total || 0;
+                    const generations = data.generations || [];
+
+                    updateStatus(`✅ Fetched ${generations.length} of ${count} total images`, 'success');
+
+                    // Log details of each generation
+                    generations.forEach((gen, idx) => {
+                        addLog(`Image ${idx + 1}: ID=${gen.id}, Status=${gen.status}, HasURL=${!!gen.output_image_url}`, 'info');
+                    });
+
+                    displayGallery(generations);
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            } catch (error) {
+                updateStatus(`❌ Failed to fetch gallery: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        function displayGallery(generations) {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            if (generations.length === 0) {
+                gallery.innerHTML = '<p>No images in gallery</p>';
+                return;
+            }
+
+            generations.forEach(gen => {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+
+                const imageLoaded = (id) => {
+                    addLog(`✅ Image loaded: ${id}`, 'success');
+                };
+
+                const imageError = (id, url) => {
+                    addLog(`❌ Image failed to load: ${id}`, 'error');
+                    addLog(`URL: ${url}`, 'error');
+                };
+
+                card.innerHTML = `
+                    ${gen.output_image_url ?
+                        `<img
+                            src="${gen.output_image_url}"
+                            alt="${gen.prompt}"
+                            onload="(${imageLoaded})('${gen.id}')"
+                            onerror="(${imageError})('${gen.id}', '${gen.output_image_url}')"
+                        />` :
+                        `<div style="height: 200px; display: flex; align-items: center; justify-content: center; background: #222;">
+                            ${gen.status === 'processing' ? '⏳ Processing...' : '❌ Failed'}
+                        </div>`
+                    }
+                    <div class="image-info">
+                        <div><strong>Status:</strong> ${gen.status}</div>
+                        <div><strong>ID:</strong> ${gen.id.substring(0, 8)}...</div>
+                        <div><strong>URL:</strong> ${gen.output_image_url ? '✅ Yes' : '❌ No'}</div>
+                        <div><strong>Created:</strong> ${new Date(gen.created_at).toLocaleString()}</div>
+                    </div>
+                `;
+
+                gallery.appendChild(card);
+            });
+
+            addLog(`Displayed ${generations.length} images in gallery`, 'success');
+        }
+
+        async function generateImage() {
+            if (!authToken) {
+                authToken = localStorage.getItem('auth_token');
+                if (!authToken) {
+                    updateStatus('⚠️ Please authenticate first', 'warning');
+                    return;
+                }
+            }
+
+            try {
+                const prompt = `Test from browser at ${new Date().toISOString()} - A magical forest with glowing trees`;
+                addLog(`Generating image with prompt: "${prompt}"`, 'info');
+
+                const response = await fetch(`${baseUrl}/api/generate/image`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        language: 'en',
+                        generation_type: 'text-to-image'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateStatus('✅ Image generated successfully!', 'success');
+                    addLog(`Generation ID: ${data.generation_id || 'Not provided'}`, 'success');
+                    addLog(`Image URL: ${data.image_url ? data.image_url.substring(0, 100) + '...' : 'No URL'}`, 'success');
+                    addLog(`Credits used: ${data.credits_used}`, 'info');
+
+                    // Auto-refresh gallery after 2 seconds
+                    setTimeout(() => {
+                        addLog('Auto-refreshing gallery...', 'info');
+                        fetchGallery();
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Generation failed');
+                }
+            } catch (error) {
+                updateStatus(`❌ Failed to generate image: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        function refreshGallery() {
+            addLog('Manually refreshing gallery...', 'info');
+            fetchGallery();
+        }
+
+        // Auto-load token from localStorage on page load
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('auth_token');
+            if (savedToken) {
+                authToken = savedToken;
+                addLog('Found saved auth token in localStorage', 'success');
+                updateStatus('✅ Using saved authentication', 'success');
+            } else {
+                addLog('No saved auth token found', 'warning');
+                updateStatus('⚠️ Please authenticate first', 'warning');
+            }
+        });
+    </script>
+</body>
+</html>

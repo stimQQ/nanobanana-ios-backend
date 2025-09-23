@@ -277,46 +277,78 @@ export async function POST(req: NextRequest) {
       const creditsRemaining = deductResult.newBalance;
 
       // Save generation record to database
-      console.log('Saving generation to database:', {
+      console.log('💾 [GENERATE] Starting database save:', {
         user_id: user.id,
         prompt: prompt.substring(0, 50) + '...',
         generation_type,
         imageUrl: imageUrl.substring(0, 100) + '...',
-        credits_used: creditsNeeded
+        imageUrlType: imageUrl.startsWith('data:') ? 'data-url' : imageUrl.startsWith('http') ? 'http-url' : 'other',
+        credits_used: creditsNeeded,
+        timestamp: new Date().toISOString()
+      });
+
+      const insertData = {
+        user_id: user.id,
+        prompt,
+        generation_type: generation_type,
+        output_image_url: imageUrl,  // Fixed: Changed from image_url to output_image_url
+        status: 'completed',          // Added: Set status to completed
+        credits_used: creditsNeeded,
+        input_images: input_images,  // Added: Save input images if provided
+        metadata: {
+          language,
+          model: 'gemini-2.5-flash-image-preview'  // Store model info in metadata
+        }
+      };
+
+      console.log('📤 [GENERATE] Inserting into database with data:', {
+        ...insertData,
+        output_image_url: insertData.output_image_url.substring(0, 100) + '...',
+        prompt: insertData.prompt.substring(0, 50) + '...'
       });
 
       const { data: generation, error: dbError } = await supabaseAdmin
         .from('image_generations')
-        .insert({
-          user_id: user.id,
-          prompt,
-          generation_type: generation_type,
-          output_image_url: imageUrl,  // Fixed: Changed from image_url to output_image_url
-          status: 'completed',          // Added: Set status to completed
-          credits_used: creditsNeeded,
-          input_images: input_images,  // Added: Save input images if provided
-          metadata: {
-            language,
-            model: 'gemini-2.5-flash-image-preview'  // Store model info in metadata
-          }
-        })
+        .insert(insertData)
         .select()
         .single();
 
       if (dbError) {
-        console.error('Failed to save generation to database:', {
+        console.error('❌ [GENERATE] Database save FAILED:', {
           error: dbError,
           code: dbError.code,
           message: dbError.message,
-          details: dbError.details
+          details: dbError.details,
+          hint: dbError.hint
         });
         // Still return the image even if DB save fails
         // User still has the image, just not in history
       } else {
-        console.log('Generation saved successfully:', {
+        console.log('✅ [GENERATE] Database save SUCCESSFUL:', {
           id: generation?.id,
-          status: generation?.status
+          status: generation?.status,
+          hasOutputUrl: !!generation?.output_image_url,
+          outputUrlSaved: generation?.output_image_url?.substring(0, 100),
+          created_at: generation?.created_at
         });
+
+        // Verify the record was actually saved
+        const { data: verifyData, error: verifyError } = await supabaseAdmin
+          .from('image_generations')
+          .select('id, status, output_image_url')
+          .eq('id', generation.id)
+          .single();
+
+        if (verifyError) {
+          console.error('⚠️ [GENERATE] Verification query failed:', verifyError);
+        } else {
+          console.log('✅ [GENERATE] Verification successful:', {
+            recordExists: !!verifyData,
+            id: verifyData?.id,
+            hasUrl: !!verifyData?.output_image_url,
+            urlMatch: verifyData?.output_image_url === imageUrl
+          });
+        }
       }
 
       return NextResponse.json(

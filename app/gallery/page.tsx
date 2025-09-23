@@ -10,6 +10,7 @@ import { apiClient } from '@/lib/api/client';
 import type { ImageGeneration } from '@/lib/types/database';
 import Link from 'next/link';
 import DefaultLayout from '@/components/layout/DefaultLayout';
+import { GalleryDebugger } from '@/components/debug/GalleryDebugger';
 
 export default function GalleryPage() {
   const { isAuthenticated } = useAuth();
@@ -25,7 +26,15 @@ export default function GalleryPage() {
   const itemsPerPage = 12;
 
   const fetchGenerations = useCallback(async (pageNum: number, statusFilter?: string) => {
+    console.log('🔍 [GALLERY] fetchGenerations called:', {
+      pageNum,
+      statusFilter,
+      isAuthenticated,
+      timestamp: new Date().toISOString()
+    });
+
     if (!isAuthenticated) {
+      console.log('❌ [GALLERY] User not authenticated, skipping fetch');
       setGenerations([]);
       setIsLoading(false);
       return;
@@ -33,29 +42,66 @@ export default function GalleryPage() {
 
     try {
       setError(null);
+      console.log('📡 [GALLERY] Calling API with params:', {
+        limit: itemsPerPage,
+        offset: pageNum * itemsPerPage,
+        status: statusFilter === 'all' ? undefined : statusFilter
+      });
+
       const response = await apiClient.getGenerations({
         limit: itemsPerPage,
         offset: pageNum * itemsPerPage,
         status: statusFilter === 'all' ? undefined : statusFilter as any,
       });
 
+      console.log('✅ [GALLERY] API Response:', {
+        success: true,
+        total: response.total,
+        generationsCount: response.generations?.length || 0,
+        firstGeneration: response.generations?.[0] ? {
+          id: response.generations[0].id,
+          status: response.generations[0].status,
+          hasUrl: !!response.generations[0].output_image_url,
+          urlPreview: response.generations[0].output_image_url?.substring(0, 100)
+        } : 'No generations'
+      });
+
       if (pageNum === 0) {
+        console.log('🔄 [GALLERY] Replacing generations (page 0)');
         setGenerations(response.generations);
       } else {
+        console.log('➕ [GALLERY] Appending generations (page', pageNum, ')');
         setGenerations(prev => [...prev, ...response.generations]);
       }
 
       setTotalCount(response.total);
       setHasMore((pageNum + 1) * itemsPerPage < response.total);
-    } catch (err) {
-      console.error('Failed to fetch generations:', err);
+
+      console.log('📊 [GALLERY] State updated:', {
+        totalCount: response.total,
+        hasMore: (pageNum + 1) * itemsPerPage < response.total,
+        currentGenerations: response.generations?.length || 0
+      });
+    } catch (err: any) {
+      console.error('❌ [GALLERY] Failed to fetch generations:', {
+        error: err,
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
       setError('Failed to load your gallery. Please try again.');
     } finally {
       setIsLoading(false);
+      console.log('✅ [GALLERY] Loading complete');
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
+    console.log('🔄 [GALLERY] useEffect triggered:', {
+      filter,
+      isAuthenticated,
+      timestamp: new Date().toISOString()
+    });
     setPage(0);
     setGenerations([]);
     setIsLoading(true);
@@ -118,6 +164,7 @@ export default function GalleryPage() {
 
   return (
     <DefaultLayout>
+      <GalleryDebugger />
       <div className="container mx-auto px-4 py-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -207,6 +254,12 @@ export default function GalleryPage() {
                         src={generation.output_image_url}
                         alt={generation.prompt}
                         className="w-full h-full object-cover"
+                        onLoad={() => console.log('✅ [GALLERY] Image loaded:', generation.id)}
+                        onError={(e) => console.error('❌ [GALLERY] Image failed to load:', {
+                          id: generation.id,
+                          url: generation.output_image_url,
+                          error: e
+                        })}
                       />
                     ) : generation.status === 'processing' ? (
                       <div className="flex items-center justify-center h-full">
